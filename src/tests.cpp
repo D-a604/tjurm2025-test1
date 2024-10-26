@@ -7,7 +7,12 @@ int my_strlen(char *str) {
      */
 
     // IMPLEMENT YOUR CODE HERE
-    return 0;
+    int length = 0;
+    while (str[length]!='\0')
+    {
+        ++length;
+    }
+    return length;
 }
 
 
@@ -19,6 +24,17 @@ void my_strcat(char *str_1, char *str_2) {
      */
 
     // IMPLEMENT YOUR CODE HERE
+    while (*str_1 !='\0')
+    {
+        str_1++;
+    }
+    while (*str_2 !='\0')
+    {
+        *str_1 =*str_2;
+        str_1++;
+        str_2++;
+    }
+    *str_1 = '\0';
 }
 
 
@@ -31,6 +47,32 @@ char* my_strstr(char *s, char *p) {
      */
 
     // IMPLEMENT YOUR CODE HERE
+    int len =0;
+    while (p[len] !='\0')
+    {
+        ++len;
+    }
+    for (char* i = s;*i !='\0';++i)
+    {
+        if(*i == p[0]) 
+        {
+            char* sTemp = i;
+            char* pTemp = p;
+            while (*sTemp && *pTemp)
+            {
+                if(*sTemp != *pTemp)
+                {
+                    break;
+                }
+                ++sTemp;
+                ++pTemp;
+            }
+            if (*pTemp == '\0')
+            {
+                return i;
+            }
+        }
+    }
     return 0;
 }
 
@@ -96,6 +138,21 @@ void rgb2gray(float *in, float *out, int h, int w) {
      */
 
     // IMPLEMENT YOUR CODE HERE
+    for(int i=0;i<h;++i)
+    {
+        for(int j=0;j<w;++j)
+        {
+            int index = i*w+j;
+            int rindex=index * 3;
+            int gindex=rindex+1;
+            int bindex=gindex+1;
+            float r=in[rindex];
+            float g=in[gindex];
+            float b=in[bindex];
+            float gray = 0.1140 * b  + 0.5870 * g + 0.2989 * r;
+            out[index]=gray;
+        }
+    }
     // ...
 }
 
@@ -198,8 +255,34 @@ void resize(float *in, float *out, int h, int w, int c, float scale) {
 
     int new_h = h * scale, new_w = w * scale;
     // IMPLEMENT YOUR CODE HERE
+    for(int y =0;y<new_h;++y)
+    {
+        for(int x =0;x<new_w;++x)
+        {
+            float x0=x/scale;
+            float y0=y/scale;
+            int x1=static_cast<int>(x0);
+            int y1 = static_cast<int>(y0);
+            int x2 =(x1 < w-1)?x1+1:x1;
+            int y2 =(y1 < w-1)?y1+1:y1;
+            float dx =x0-x1;
+            float dy =y0-y1;
+            for(int channel = 0;channel < c;++channel)
+            {
+                float Q11=in[(y1*w+x1)*c+channel];
+                float Q12=in[(y1*w+x2)*c+channel];
+                float Q21=in[(y1*w+x1)*c+channel];
+                float Q22=in[(y1*w+x2)*c+channel];
+                float Qx =Q11*(1-dx)+Q12*dx;
+                float Qy =Q21*(1-dx)+Q22*dx;
+                float pixel = Qx *(1-dy)+Qy*dy;
+                out[(y*new_w+x)*c+channel]=pixel;
+            }
+        }
+        }
+    }
 
-}
+
 
 
 // 练习6，实现图像处理算法：直方图均衡化
@@ -221,4 +304,30 @@ void hist_eq(float *in, int h, int w) {
      */
 
     // IMPLEMENT YOUR CODE HERE
+    const int MAX_GRAY_LEVEL=256;
+    int hist[MAX_GRAY_LEVEL]={0};
+    float cdf[MAX_GRAY_LEVEL]={0.0};
+    float cdf_sum=0.0f;
+    int total_pixels=h*w;
+    for(int i=0;i<h;++i)
+    {
+        for(int j=0;j<w;++j)
+        {
+            int pixel_value=static_cast<int>(in[i*w+j]);
+            ++hist[pixel_value];
+        }
+    }
+    for(int i=0;i<MAX_GRAY_LEVEL;++i)
+    {
+        cdf_sum+=hist[i];
+        cdf[i]=cdf_sum/static_cast<float>(total_pixels);
+    }
+    for(int i=0;i<h;++i)
+    {
+        for(int j=0;j<w;++j)
+        {
+            int pixel_value=static_cast<int>(in[i*w+j]);
+            in[i*w+j]=static_cast<float>(cdf[pixel_value]*255);
+        }
+    }
 }
